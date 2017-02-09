@@ -26,25 +26,20 @@ class php(
           $session_gc_probability=$php::params::session_gc_probability_default,
         ) inherits php::params{
 
-
-  if defined(Class['ntteam'])
-  {
-    ntteam::tag{ 'php': }
-  }
   validate_string($max_input_vars)
   validate_string($short_open_tag)
   validate_string($serialize_precision)
   validate_string($max_input_time)
   validate_string($session_save_path)
   validate_string($session_gc_probability)
-  
+
   validate_absolute_path($confbase)
   validate_absolute_path($errorlog)
-  
+
   validate_re($exposephp, '^O(n|ff)$', 'Not a valid option')
   validate_re($allowurlfopen, '^O(n|ff)$', 'Not a valid option')
   validate_re($allowurlinclude, '^O(n|ff)$', 'Not a valid option')
-  
+
   validate_re($php_loglevel, [ '^alert$', '^error$', '^warning$', '^notice$', '^debug$' ], "Not a valid loglevel:     ${php_loglevel}")
 
   package { $php::params::phpdependencies:
@@ -61,8 +56,9 @@ class php(
     if($customini)
     {
       file { "${confbase}/php.ini":
-      ensure => $customini,
-      force  => true,
+        ensure  => $customini,
+        force   => true,
+        require => Package[$php::params::phpcli],
       }
     }
     else
@@ -73,7 +69,8 @@ class php(
         group   => 'root',
         mode    => '0644',
         content => template('php/phpini.erb'),
-        }
+        require => Package[$php::params::phpcli],
+      }
     }
   }
 }
