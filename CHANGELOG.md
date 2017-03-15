@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 0.4.7
+
+* improved compatibility for **php::pecl**
+
+## 0.4.5
+
+* **php::enablemodule** priority typo and improved puppet compatibility
+
+## 0.4.3
+
+* **php::enablemodule** improved service notifications
+
+## 0.4.2
+
+* added **ioncube** support
+
 ## 0.4.1
 
 * removed puppetlabs-apt, using **eyp-apt**

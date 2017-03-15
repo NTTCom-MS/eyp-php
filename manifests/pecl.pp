@@ -1,45 +1,32 @@
 define php::pecl  (
-        $modulename=$name,
-        $dependencies=undef,
-        $logdir='/var/log/puppet',
-        $enablefile=undef,
+        $modulename   = $name,
+        $dependencies = undef,
+        $logdir       = '/var/log/puppet',
+        $enablefile   = undef,
       ) {
+
   Exec {
     path => '/usr/sbin:/usr/bin:/sbin:/bin',
   }
 
-  if($dependencies)
+  include ::php
+
+  if($dependencies!=undef)
   {
     validate_array($dependencies)
 
     package { $dependencies:
       ensure => 'installed',
+      before => Exec["pecl install ${modulename}"],
     }
   }
-
-  if($php::params::pecl_dependencies!=undef)
-  {
-    if ! defined(Package[$php::params::pecl_dependencies])
-    {
-      package{ $php::params::pecl_dependencies:
-          ensure => 'installed',
-      }
-    }
-    $pecl_exec_install_dependencies=[$dependencies, $php::params::pecl_dependencies]
-  }
-  else
-  {
-    $pecl_exec_install_dependencies=$dependencies
-  }
-
 
   exec { "pecl install ${modulename}":
-    command => "bash -c 'while :;do echo;done | pecl install ${modulename}' > ${logdir}/.pecl.install.${modulename}.log",
-    require => Package[$pecl_exec_install_dependencies],
+    command => "bash -c 'while :;do echo;done | pecl install ${modulename}' > ${logdir}/pecl.install.${modulename}.log",
     unless  => "pecl list | grep -E \'\\b${modulename}\\b\'",
   }
 
-  file { "/etc/php5/mods-available/${modulename}.ini":
+  file { "${php::params::confbase}/mods-available/${modulename}.ini":
     ensure  => present,
     owner   => 'root',
     group   => 'root',
@@ -51,8 +38,8 @@ define php::pecl  (
   if($enablefile)
   {
     file { $enablefile:
-      ensure => link,
-      target => "/etc/php5/mods-available/${modulename}.ini",
+      ensure => 'link',
+      target => "${php::params::confbase}/mods-available/${modulename}.ini",
     }
   }
 
