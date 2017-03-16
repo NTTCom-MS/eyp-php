@@ -1,9 +1,9 @@
-define php::pecl  (
-        $modulename   = $name,
-        $dependencies = undef,
-        $logdir       = '/var/log/puppet',
-        $enablefile   = undef,
-      ) {
+define php::pecl(
+                  $modulename   = $name,
+                  $dependencies = undef,
+                  $logdir       = '/var/log/puppet',
+                  $enablefile   = undef,
+                ) {
 
   Exec {
     path => '/usr/sbin:/usr/bin:/sbin:/bin',
@@ -21,8 +21,19 @@ define php::pecl  (
     }
   }
 
+  if($php::params::pecl_dependencies!=undef)
+  {
+    if(!defined(Package[$php::params::pecl_dependencies]))
+    {
+      package { $php::params::pecl_dependencies:
+        ensure => 'installed',
+        before => Exec["pecl install ${modulename}"],
+      }
+    }
+  }
+
   exec { "pecl install ${modulename}":
-    command => "bash -c 'while :;do echo;done | pecl install ${modulename}' > ${logdir}/pecl.install.${modulename}.log",
+    command => "bash -c 'while :;do echo;done | pecl install ${modulename}'",
     unless  => "pecl list | grep -E \'\\b${modulename}\\b\'",
   }
 
