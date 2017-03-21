@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 0.4.13
+
+* split **php::mysqlnd_ms** to have a general **php::mysqlnd** class
+
+## 0.4.12
+
+* added mysqlnd_ms under puppet management
+
+## 0.4.11
+
+* changed **while true** to **yes** for pecl install
+
+## 0.4.10
+
+* dropped deprecated tag support
+
 ## 0.4.9
 
 * deleting pecl install log file

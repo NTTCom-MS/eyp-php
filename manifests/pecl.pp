@@ -3,6 +3,7 @@ define php::pecl(
                   $dependencies = undef,
                   $logdir       = '/var/log/puppet',
                   $enablefile   = undef,
+                  $manage_ini   = true,
                 ) {
 
   Exec {
@@ -32,18 +33,27 @@ define php::pecl(
     }
   }
 
-  exec { "pecl install ${modulename}":
-    command => "bash -c 'while :;do echo;done | pecl install ${modulename}'",
-    unless  => "pecl list | grep -E \'\\b${modulename}\\b\'",
+  exec { "pecl ${modulename} pkg-config":
+    command => 'which pkg-config',
+    unless  => 'which pkg-config',
   }
 
-  file { "${php::params::confbase}/mods-available/${modulename}.ini":
-    ensure  => present,
-    owner   => 'root',
-    group   => 'root',
-    mode    => '0644',
-    content => "extension=${modulename}.so\n",
-    require => Exec["pecl install ${modulename}"],
+  exec { "pecl install ${modulename}":
+    command => "bash -c 'yes \$'\\n' | pecl install ${modulename}'",
+    unless  => "pecl list | grep -E \'\\b${modulename}\\b\'",
+    require => Exec["pecl ${modulename} pkg-config"],
+  }
+
+  if($manage_ini)
+  {
+    file { "${php::params::confbase}/mods-available/${modulename}.ini":
+      ensure  => present,
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0644',
+      content => "extension=${modulename}.so\n",
+      require => Exec["pecl install ${modulename}"],
+    }
   }
 
   if($enablefile)
@@ -53,5 +63,4 @@ define php::pecl(
       target => "${php::params::confbase}/mods-available/${modulename}.ini",
     }
   }
-
 }
