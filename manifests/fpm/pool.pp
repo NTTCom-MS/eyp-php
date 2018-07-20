@@ -1,9 +1,10 @@
-define php::fpmpool(
+define php::fpm::pool(
                       $poolname             = $name,
-                      $confbase             = '/etc/php5/fpm',
+                      $confbase             = $php::params::confbase_fpm,
+                      $fpm_pooldir          = $php::params::fpm_pooldir,
                       $user                 = $php::params::user,
                       $group                = $php::params::group,
-                      $listen               = '/var/run/php5-fpm.sock',
+                      $listen               = "/var/run/php-fpm.${name}.sock",
                       $socketmode           = '0660',
                       $allowedclients       = undef,
                       $phpstatus            = '/php-status',
@@ -21,6 +22,8 @@ define php::fpmpool(
                       $monitscripts         = true,
                       $monitscriptsbase     = '/usr/local/bin',
                     ) {
+  include ::php::fpm
+
   validate_absolute_path($confbase)
 
   if($pingpath)
@@ -44,14 +47,23 @@ define php::fpmpool(
     validate_integer($maxspareservers, undef, 1)
   }
 
-  file { "${confbase}/pool.d/${poolname}.conf":
+  if($php::use_php_package_prefix_ius==undef)
+  {
+    $actual_phpfpmpackage=$php::params::phpfpmpackage
+  }
+  else
+  {
+    $actual_phpfpmpackage = regsubst($php::params::phpfpmpackage, '^php[0-9.]*', $php::use_php_package_prefix_ius)
+  }
+
+  file { "${confbase}/${fpm_pooldir}/${poolname}.conf":
     ensure  => 'present',
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
     content => template("${module_name}/fpmpoolconf.erb"),
-    notify  => Service['php5-fpm'],
-    require => Package[$php::params::phpfpmpackage],
+    notify  => Service[$php::params::fpm_service_name],
+    require => Package[$actual_phpfpmpackage],
   }
 
   if ($monitscripts)
@@ -65,11 +77,12 @@ define php::fpmpool(
     }
 
     file { "${monitscriptsbase}/check_phpfpm_running_workers":
-      ensure => 'present',
-      owner  => 'root',
-      group  => 'root',
-      mode   => '0755',
-      source => "puppet:///modules/${module_name}/check_phpfpm_running_workers.sh",
+      ensure  => 'present',
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0755',
+      content => file("${module_name}/check_phpfpm_running_workers.sh"),
+      #source => "puppet:///modules/${module_name}/check_phpfpm_running_workers.sh",
     }
 
   }
